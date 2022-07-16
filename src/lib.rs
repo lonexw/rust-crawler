@@ -1,11 +1,24 @@
 use std::collections::{HashMap, HashSet};
 
+pub use domain::{AllowList, AllowListConfig, BlockList, DomainListing};
+
+/// Reexport all the scraper types
 pub trait Scraper {}
 
 /// Crawler 负责执行需要爬取的网站地址列表, 
 /// 并将成功的响应结果转发给 Scraper 处理
 pub struct Crawler<T: Scraper> {
     client: reqwest::Client,
+    /// 域名列表：黑名單與白名單
+    lsit: DomainListing<T::State>,
+    /// 追蹤已提交請求的深度
+    current_depth: usize,
+    /// The maximum depth reqwest are allowed to next.
+    max_depth: usize,
+    /// 是否遵循目標網站爬蟲規則
+    respect_robots_txt: bool,
+    /// 是否忽略未成功請求響應
+    skip_non_successful_response: bool,
 }
 
 impl<T: Scraper> Crawler<T> {
@@ -13,8 +26,46 @@ impl<T: Scraper> Crawler<T> {
     pub fn new(config: CrawlerConfig) -> Self {
         let client = config.client.unwrap_or_default(); 
 
+        let list = if config.allow_domains.is_empty() {
+            let block_list = BlockList::new(
+                config.disallowed_domain,
+                client.clone(),
+                config.respect_robots_txt,
+                config.skip_non_successful_response,
+                config.max_depth.unwrap_or(usize::MAX),
+                config
+                    .max_requests
+                    .unwrap_or(CrawlerConfig::MAX_CONCURRENT_REQUESTS),
+            );
+
+            DomainListing::BlockList(block_list)
+        } else {
+            let mut allow_list = AllowList::Default();
+            let max_requests = config
+                .max_requests
+                .unwrap_or(CrawlerConfig::MAX_CONCURRENT_REQUESTS)
+                / config.allowed_domains.len();
+            for (domain, delay) in config.allowed_domains {
+                let allow = AllowListConfig {
+                    delay,
+                    respect_robots_txt: config.respect_robots_txt,
+                    client: client.clone(),
+                    skip_non_successful_response: config.skip_non_successful_response,
+                    max_depth: config.max_depth.unwrap_or(usize::MAX),
+                    max_requests,
+                };
+                allow_list.allow(domain, allow);
+            }
+            DomainListing::AllowList(allow_list)
+        };
+
         Self {
-            client: client,
+            client,
+            list,
+            current_depth: 0,
+            max_depth: config.max_depth.unwrap_or(usize::MAX),
+            respect_robots_txt: config.respect_robots_txt, 
+            skip_non_successful_response: config.skip_non_successful_response,
         }
     }
 

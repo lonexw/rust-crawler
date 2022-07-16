@@ -1,5 +1,16 @@
 # rust-crawler
 
+> 說明：這個項目構建階段，是我初步學習 Rust 構建項目的時期，基本很多地方都在模仿複製，僅作爲學習用途。
+
+參考項目和學習資料來源：
+
+- https://kerkour.com/rust-crawler-implementation
+- https://github.com/mattsse/voyager
+- https://kaisery.github.io/trpl-zh-cn/title-page.html
+- https://course.rs/about-book.html
+- https://rusty.rs/about.html
+- https://github.com/rustlang-cn/async-book
+
 ## 爬虫程序设计
 
 Why use Rust?
