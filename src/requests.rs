@@ -16,12 +16,12 @@ pub struct QueuedRequest<T> {
 }
 
 pub struct QueuedRequestBuilder<T> {
-    pub request: reqwest::Request,
+    pub request: reqwest::RequestBuilder,
     pub state: Option<T>,
     pub depth: usize,
 }
 
-/// 請求隊列
+/// 請求隊列    
 pub struct RequestQueue<T> {
     delay: Option<(Delay, RequestDelay)>,
     queued_requests: VecDeque<QueuedRequest<T>>,
@@ -30,7 +30,7 @@ pub struct RequestQueue<T> {
 impl<T> RequestQueue<T> {
     pub fn with_delay(delay: RequestDelay) -> Self {
         Self {
-            delay: Some(Delay::new(Duration::default()), delay),
+            delay: Some((Delay::new(Duration::default()), delay)),
             queued_requests: Default::default(),
         }
     }
@@ -50,7 +50,7 @@ impl<T> RequestQueue<T> {
             std::mem::swap(&mut delay, d);
             Some(delay)
         } else { 
-            self.delay = Some((Delay::new(Duration::default()), delay))
+            self.delay = Some((Delay::new(Duration::default()), delay));
             None 
         }
     }
@@ -69,7 +69,7 @@ impl<T: Unpin> Stream for RequestQueue<T> {
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         if self.queued_requests.is_empty() {
-            Poll::Ready(None)
+            return Poll::Ready(None)
         }
         
         let pin = self.get_mut();
@@ -85,6 +85,15 @@ impl<T: Unpin> Stream for RequestQueue<T> {
         }
 
         Poll::Ready(next)
+    }
+}
+
+impl<T> Default for RequestQueue<T> {
+    fn default() -> Self {
+        Self {
+            delay: None,
+            queued_requests: Default::default(),
+        }
     }
 }
 

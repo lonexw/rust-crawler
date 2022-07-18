@@ -29,7 +29,7 @@ pub enum CrawlError<T: fmt::Debug> {
         state: Option<T>,
         depth: usize,
     },
-    #[error("Rejected a request, because its url is disallowed due to {}, while carrying state: {:?}", .reason, .state)]
+    #[error("Failed to fetch robots.txt from host: {}", .host)]
     RobotsTxtError {
         host: String,
     },
