@@ -18,3 +18,4 @@ scraper = "0.13.0"
 thiserror = "1.0.31"
 tokio = { version = "1.15", features = ["full"] }
 html5ever = "0.25"
+thirtyfour = "0.31.0"

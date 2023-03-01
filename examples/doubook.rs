@@ -1,5 +1,6 @@
 #[allow(dead_code)]
 
+use thirtyfour::prelude::*;
 use anyhow::Result;
 use futures::StreamExt;
 use rust_crawler::scraper::Selector;
@@ -106,18 +107,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_domain_with_delay("book.douban.com", RequestDelay::Fixed(Duration::from_millis(1_000)));
     let mut collector = Collector::new(BookScraper::default(), config);
 
-    collector.crawler_mut().visit_with_state(
-        // "https://search.douban.com/book/subject_search?search_text=9787513349369&cat=1001", 
-        "http://127.0.0.1:8000/9787513349369.html",
-        BookState::Page(1)
-    );
+    let caps = DesiredCapabilities::chrome();
+    let driver = WebDriver::new("http://127.0.0.1:9515", caps).await?;
 
-    dbg!("开始查询书籍：9787513349369");
+    let books: Vec<i64> = vec![9787513349369, 9784344038158];
 
-    while let Some(output) = collector.next().await {
-        let book = output?;
-        dbg!(book);
+    for isbn in &books {
+        driver.goto(format!("https://search.douban.com/book/subject_search?search_text={}&cat=1001",
+            isbn.to_string())).await?;
+
+        let cover_link = driver.find(By::ClassName("cover-link"))
+            .await?.attr("href").await?;
+        
+        let link = cover_link.unwrap();
+
+        if (!link.is_empty()) {
+            collector.crawler_mut().visit_with_state(link, BookState::Book);
+
+            while let Some(output) = collector.next().await {
+                let book = output?;
+                dbg!(book);
+            }
+        } 
     }
+    
+    driver.quit().await?;
 
     Ok(())
 }
