@@ -117,7 +117,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let config = CrawlerConfig::default().allow_domain_with_delay(
         "news.ycombinator.com",
-        RequestDelay::Fixed(Duration::from_millis(2_000)),
+        RequestDelay::Fixed(Duration::from_millis(5_000)),
     );
     let mut collector = Collector::new(HackernewsScraper::default(), config);
 

@@ -16,5 +16,5 @@ reqwest = "0.11.11"
 robotstxt = "0.3.0"
 scraper = "0.13.0"
 thiserror = "1.0.31"
-tokio = { version = "1.15", features = ["full"], optional = true }
+tokio = { version = "1.15", features = ["full"] }
 html5ever = "0.25"
